@@ -122,7 +122,7 @@ def quantile(x, beta, xi, tol=1e-100):
     step=-grad(current_p,x,beta,xi)
     step/=mag(step)
     count=0
-    while lr>1e-100 and count<1000:
+    while lr>tol and count<1000:
         new_p=exp(current_p,lr*step).float()
         new_loss=loss(new_p,x,beta,xi)
         #print(new_loss)
