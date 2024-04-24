@@ -66,9 +66,40 @@ for i in range(len(betas)):
 
 circle = plt.Circle((0, 0), 1, color='b', fill=False)
 ax.add_patch(circle)
-#for k in range(4):
-#    plt.scatter(quantiles[(k*m+1):((k+1)*m),:].cpu().numpy()[:,0], quantiles[(k*m+1):((k+1)*m),:].cpu().numpy()[:,1], marker = '.')
-#    matplotlib.lines(quantiles[(k*m+1):((k+1)*m),:].cpu().numpy()[:,0], quantiles[(k*m+1):((k+1)*m),:].cpu().numpy()[:,1])
+ax.set_xlim((-1, 1))
+ax.set_ylim((-1, 1))
+plt.axis('equal')
+plt.show(block=False)
+
+
+
+# draw outlier figure
+f = plt.figure(figsize=(7,7))
+ax = plt.gca()
+
+if which=='sim':
+    plt.scatter(x.cpu().numpy()[:,0], x.cpu().numpy()[:,1], s=30, c='0', marker = '.')
+elif which=='real':
+    colors=['0','0.1','0.2','0.3','0.4','0.5','0.6','0.7']
+    for j in range(8):
+        plt.scatter(x[y==j].cpu().numpy()[:,0], x[y==j].cpu().numpy()[:,1], s=10, c=colors[j], marker = '.')
+
+plt.scatter(quantiles98.cpu().numpy()[:,0], quantiles98.cpu().numpy()[:,1], s=30, c='tab:green', marker = '.')
+plt.plot(np.append(quantiles98.cpu().numpy()[:,0],quantiles98.cpu().numpy()[:,0][0])
+, np.append(quantiles98.cpu().numpy()[:,1],quantiles98.cpu().numpy()[:,1][0])
+, c='tab:green')
+
+plt.scatter(quartiles.cpu().numpy()[:,0], quartiles.cpu().numpy()[:,1], s=30, c='tab:orange', marker = '.')
+plt.plot(np.append(quartiles.cpu().numpy()[:,0],quartiles.cpu().numpy()[:,0][0])
+, np.append(quartiles.cpu().numpy()[:,1],quartiles.cpu().numpy()[:,1][0])
+, c='tab:orange')
+
+plt.scatter(outlierfence.cpu().numpy()[:,0], outlierfence.cpu().numpy()[:,1], s=30, c='tab:red', marker = '.')
+plt.plot(np.append(outlierfence.cpu().numpy()[:,0],outlierfence.cpu().numpy()[:,0][0])
+, np.append(outlierfence.cpu().numpy()[:,1],outlierfence.cpu().numpy()[:,1][0])
+, c='tab:red')
+
+circle = plt.Circle((0, 0), 1, color='b', fill=False)
 ax.set_xlim((-1, 1))
 ax.set_ylim((-1, 1))
 plt.axis('equal')
