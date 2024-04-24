@@ -56,15 +56,6 @@ def log(p, x):
     out=torch.unsqueeze(theta,1)*unitv
     return out
 
-def dist(p, x):
-    """
-    p: point in H^n (1,n+1)
-    x: batch of points in H^n (b,n+1)
-    out: (b)
-    """
-    out=mag(log(p, x))
-    return out
-
 def direct(p,xi):
     """
     p: point in H^n (1,n+1)
@@ -84,7 +75,9 @@ def loss(p, x, beta, xi):
     beta: number in [0,1)
     xi: point in S^(n-1), the boundary at infinite (1,n)
     """
-    out=torch.mean(dist(p,x)+ip(beta*direct(p,xi),log(p,x)))
+    lpx=log(p,x)
+    dpx=mag(lpx)
+    out=torch.mean(dpx+ip(beta*direct(p,xi),lpx))
     return out
 
 def grad(p, x, beta, xi):
@@ -95,8 +88,8 @@ def grad(p, x, beta, xi):
     xi: point in S^(n-1), the boundary at infinite (1,n)
     out: gradient (1,n+1)
     """
-    dpx=dist(p,x)
     lpx=log(p,x)
+    dpx=mag(lpx)
     xip=direct(p,xi)
     unitpx=lpx/torch.unsqueeze(dpx,1)
     cothdpx=torch.cosh(dpx)/torch.sinh(dpx)
