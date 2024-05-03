@@ -131,7 +131,6 @@ def quantile(x, beta, y, xiy, tol=1e-100):
             step=-grad(current_p,x,beta,y,xiy)
             step/=mag(step)
             lr=1.1*lr # try to speed up convergence by increasing learning rate
-            #count+=1
         else:
             lr=lr/2
             count+=1
@@ -221,8 +220,6 @@ def alog(x, p):
     t=torch.unsqueeze(mag(v),1)
     unitv=v/t
     out=torch.unsqueeze(theta,1)*unitv
-    #for j in [i for i, x in enumerate(t<1e-5) if x]: # log should be 0 when p=x_j
-    #    out[j,:]=0
     return out
 
 def pt(x, v, p):
