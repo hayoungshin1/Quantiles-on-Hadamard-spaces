@@ -76,12 +76,9 @@ x=H2B(x)
 f = plt.figure(figsize=(7,7))
 ax = plt.gca()
 
-if which=='sim':
-    plt.scatter(x.cpu().numpy()[:,0], x.cpu().numpy()[:,1], s=30, c='0', marker = '.')
-elif which=='real':
-    colors=['0','0.1','0.2','0.3','0.4','0.5','0.6','0.7']
-    for j in range(8):
-        plt.scatter(x[y==j].cpu().numpy()[:,0], x[y==j].cpu().numpy()[:,1], s=10, c=colors[j], marker = '.')
+colors=['0','0.1','0.2','0.3','0.4','0.5','0.6','0.7']
+for j in range(8):
+    plt.scatter(x[y==j].cpu().numpy()[:,0], x[y==j].cpu().numpy()[:,1], s=10, c=colors[j], marker = '.')
 
 
 plt.scatter(quantiles[0].cpu().numpy()[0], quantiles[0].cpu().numpy()[1], s=30, c='tab:blue', marker = '.')
@@ -102,12 +99,9 @@ plt.show(block=False)
 f = plt.figure(figsize=(7,7))
 ax = plt.gca()
 
-if which=='sim':
-    plt.scatter(x.cpu().numpy()[:,0], x.cpu().numpy()[:,1], s=30, c='0', marker = '.')
-elif which=='real':
-    colors=['0','0.1','0.2','0.3','0.4','0.5','0.6','0.7']
-    for j in range(8):
-        plt.scatter(x[y==j].cpu().numpy()[:,0], x[y==j].cpu().numpy()[:,1], s=10, c=colors[j], marker = '.')
+colors=['0','0.1','0.2','0.3','0.4','0.5','0.6','0.7']
+for j in range(8):
+    plt.scatter(x[y==j].cpu().numpy()[:,0], x[y==j].cpu().numpy()[:,1], s=10, c=colors[j], marker = '.')
 
 
 plt.scatter(quantiles98.cpu().numpy()[:,0], quantiles98.cpu().numpy()[:,1], s=30, c='tab:green', marker = '.')
