@@ -1,4 +1,4 @@
-which='sim' # simulated or real data
+which='real' # simulated or real data
 
 if which=='sim':
     np.random.seed(10)
