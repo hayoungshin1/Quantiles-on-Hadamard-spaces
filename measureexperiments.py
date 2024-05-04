@@ -110,12 +110,6 @@ for moment in ['dispersion', 'skewness', 'kurtosis', 'sasymmetry']:
             f = plt.figure(figsize=(7,7))
             ax = plt.gca()
             plt.scatter(x.cpu().numpy()[:,0], x.cpu().numpy()[:,1], s=30, c='0', marker = '.')
-            plt.scatter(quantiles[0].cpu().numpy()[0], quantiles[0].cpu().numpy()[1], s=30, c='tab:blue', marker = '.')
-            for i in range(len(betas)):
-                plt.scatter(quantiles[(i*m+1):((i+1)*m+1)].cpu().numpy()[:,0], quantiles[(i*m+1):((i+1)*m+1)].cpu().numpy()[:,1], s=30, c='tab:blue', marker = '.')
-                plt.plot(np.append(quantiles[(i*m+1):((i+1)*m+1)].cpu().numpy()[:,0],quantiles[(i*m+1):((i+1)*m+1)].cpu().numpy()[:,0][0])
-            , np.append(quantiles[(i*m+1):((i+1)*m+1)].cpu().numpy()[:,1],quantiles[(i*m+1):((i+1)*m+1)].cpu().numpy()[:,1][0])
-            , c='tab:blue')
             circle = plt.Circle((0, 0), 1, color='b', fill=False)
             ax.add_patch(circle)
             ax.set_xlim((-1, 1))
