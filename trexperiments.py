@@ -7,11 +7,87 @@ angles=2*torch.arange(0,m)*math.pi/m
 originradial[:,1]=torch.cos(angles)
 originradial[:,2]=torch.sin(angles)
 
-data=np.load('olsson_poincare_embedding.npz')
-x=np.concatenate((data['x_train'],data['x_test']),axis=0)
-y=np.concatenate((data['y_train'],data['y_test']),axis=0)
-x=torch.Tensor(x)
-x=B2H(x)
+which='real'
+if which=='sim':
+    np.random.seed(10)
+    x=np.random.normal(0,0.3,(100,2))
+    x=torch.Tensor(x)
+    #x[:,1]/=4
+    x=B2H(x)
+elif which=='real':
+    data=np.load('olsson_poincare_embedding.npz')
+    x=np.concatenate((data['x_train'],data['x_test']),axis=0)
+    y=np.concatenate((data['y_train'],data['y_test']),axis=0)
+    x=torch.Tensor(x)
+    x=B2H(x)
+    #x=x[y==3]
+
+supdispersion=[]
+avedispersion=[]
+supskewness=[]
+aveskewness=[]
+supkurtosis=[]
+avekurtosis=[]
+sasymmetry=[]
+
+numlevels=4
+
+for moment in ['other', 'kurtosis']:
+    for extreme in ['no', 'yes']:
+        if extreme=='no':
+            if moment=='other':
+                betas=torch.tensor([0.5])
+            elif moment=='kurtosis':
+                betas=torch.tensor([0.2,0.8])
+        if extreme=='yes':
+            if moment=='other':
+                betas=torch.tensor([0.98])
+            elif moment=='kurtosis':
+                betas=torch.tensor([0.2,0.98])
+        quantiles=quantile(x, 0, origin, torch.unsqueeze(originradial[0,:],0)) # frechet median
+        median=quantiles.detach().clone()
+        xis=pt(origin,originradial,median) # xi at frechet median
+        for i in range(len(betas)):
+            for j in range(len(xis)):
+                quantiles=torch.concat((quantiles,quantile(x, betas[i].item(), median, torch.unsqueeze(xis[j,:],0))),dim=0)
+                print(i,j)
+        lift=log(median,quantiles)
+        interranges=torch.zeros(int(len(xis)/2))
+        for j in range(int(len(xis)/2)):
+            interranges[j]=mag(torch.unsqueeze(lift[j+1,:]-lift[j+1+int(len(xis)/2),:],0))
+        supinterrange=torch.max(interranges).item()
+        aveinterrange=torch.mean(interranges).item()
+        opps=torch.zeros(int(len(xis)/2))
+        if moment=='other':
+            supdispersion.append(supinterrange)
+            avedispersion.append(aveinterrange)
+            for j in range(int(len(xis)/2)):
+                opps[j]=mag(torch.unsqueeze(lift[j+1,:]+lift[j+1+int(len(xis)/2),:],0))
+            supskewness.append(torch.max(opps).item()/supinterrange)
+            aveskewness.append(torch.mean(opps).item()/aveinterrange)
+            sasymmetry.append(torch.abs(torch.log(torch.max(mag(lift[1:,:]))/torch.min(mag(lift[1:,:])))).item())
+        elif moment=='kurtosis':
+            for j in range(int(len(xis)/2)):
+                opps[j]=mag(torch.unsqueeze(lift[j+1+len(xis),:]-lift[j+1+3*int(len(xis)/2),:],0))
+            supkurtosis.append(torch.max(opps).item()/supinterrange)
+            avekurtosis.append(torch.mean(opps).item()/aveinterrange)
+        #if moment=='dispersion':
+        print('supdispersion:')
+        print(supdispersion)
+        print('avedispersion:')
+        print(avedispersion)
+        #elif moment=='skewness':
+        print('supskewness:')
+        print(supskewness)
+        print('aveskewness:')
+        print(aveskewness)
+        #elif moment=='kurtosis':
+        print('supkurtosis:')
+        print(supkurtosis)
+        print('avekurtosis:')
+        print(avekurtosis)
+        print('sasymmetry:')
+        print(sasymmetry)
 
 x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),1)
 frechet=frechetmean(x)
