@@ -5,6 +5,7 @@ import math
 import matplotlib.pyplot as plt
 from itertools import combinations
 from operator import itemgetter
+from scipy.spatial.distance import cdist, euclidean
 
 def ip(v1, v2):
     """
@@ -55,6 +56,8 @@ def log(p, x):
     t=torch.unsqueeze(mag(v),1)
     unitv=v/t
     out=torch.unsqueeze(theta,1)*unitv
+    #for j in [i for i, x in enumerate(t<1e-5) if x]: # log should be 0 when p=x_j
+    #    out[j,:]=0
     return out
 
 def direct(p,y,xiy):
@@ -114,16 +117,21 @@ def quantile(x, beta, y, xiy, tol=1e-100):
     """
     x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),1) # reprojects x onto the manifold, for precision
     xiy=xiy/torch.sqrt(torch.sum(xiy*xiy)) # ensures xiy is unit vector
+    #current_p=torch.unsqueeze(x[0,:],0) # initial estimate for quantile
     current_p=torch.unsqueeze(torch.concat((torch.ones(1),torch.zeros(x.shape[1]-1))),0) # initial estimate for quantile
     old_p=current_p.detach().clone()
     current_loss=loss(current_p,x,beta,y,xiy)
+    #print(current_loss)
     lr=0.001
     step=-grad(current_p,x,beta,y,xiy)
     step/=mag(step)
+    #count=0
     count=0
+    #while (count==0 or (dist(old_p,current_p)>tol and count<1000 and acount<1000)):
     while lr>tol and count<1000:
         new_p=exp(current_p,lr*step).float()
         new_loss=loss(new_p,x,beta,y,xiy)
+        #print(new_loss)
         if (new_loss<=current_loss):
             old_p=current_p
             current_p=new_p
@@ -131,10 +139,14 @@ def quantile(x, beta, y, xiy, tol=1e-100):
             step=-grad(current_p,x,beta,y,xiy)
             step/=mag(step)
             lr=1.1*lr # try to speed up convergence by increasing learning rate
+            #count+=1
         else:
             lr=lr/2
             count+=1
     out=current_p
+    #if count==1000:
+    #    print(count,acount)
+    #print(lr)
     return out
 
 def H2B(p):
@@ -220,6 +232,8 @@ def alog(x, p):
     t=torch.unsqueeze(mag(v),1)
     unitv=v/t
     out=torch.unsqueeze(theta,1)*unitv
+    #for j in [i for i, x in enumerate(t<1e-5) if x]: # log should be 0 when p=x_j
+    #    out[j,:]=0
     return out
 
 def pt(x, v, p):
@@ -256,3 +270,30 @@ def transform(p,basis,v,transformers):
     out=torch.matmul(v,transformers)
     out=torch.matmul(out,basis)
     return out
+
+def geometric_median(X, eps=1e-10):
+    """
+    Code obtained from https://stackoverflow.com/questions/30299267/geometric-median-of-multidimensional-points, by user orlp
+    X: numpy array of data points
+    """
+    y = np.mean(X, 0)
+    while True:
+        D = cdist(X, [y])
+        nonzeros = (D != 0)[:, 0]
+        Dinv = 1 / D[nonzeros]
+        Dinvs = np.sum(Dinv)
+        W = Dinv / Dinvs
+        T = np.sum(W * X[nonzeros], 0)
+        num_zeros = len(X) - np.sum(nonzeros)
+        if num_zeros == 0:
+            y1 = T
+        elif num_zeros == len(X):
+            return y
+        else:
+            R = (T - y) * Dinvs
+            r = np.linalg.norm(R)
+            rinv = 0 if r == 0 else num_zeros/r
+            y1 = max(0, 1-rinv)*T + min(1, rinv)*y
+        if euclidean(y, y1) < eps:
+            return y1
+        y = y1
