@@ -37,29 +37,14 @@ for moment in ['other', 'kurtosis']:
         if extreme=='no':
             if moment=='other':
                 betas=torch.tensor([0.5])
-                for k in range(2):
-                    dispersion.append(np.quantile(vecs[:,k],0.5+betas.item()/2)-np.quantile(vecs[:,k],0.5-betas.item()/2))
-                    skewness.append((np.quantile(vecs[:,k],0.5+betas.item()/2)+np.quantile(vecs[:,k],0.5-betas.item()/2)-2*np.median(vecs[:,k]))/(np.quantile(vecs[:,k],0.5+betas.item()/2)-np.quantile(vecs[:,k],0.5-betas.item()/2)))
             elif moment=='kurtosis':
                 betas=torch.tensor([0.2,0.8])
-                for k in range(2):
-                    kurtosis.append((np.quantile(vecs[:,k],0.5+betas[1].item()/2)-np.quantile(vecs[:,k],0.5-betas[1].item()/2))/(np.quantile(vecs[:,k],0.5+betas[0].item()/2)-np.quantile(vecs[:,k],0.5-betas[0].item()/2)))
         if extreme=='yes':
             if moment=='other':
                 betas=torch.tensor([0.98])
                 for k in range(2):
-                    dispersion.append(np.quantile(vecs[:,k],0.5+betas.item()/2)-np.quantile(vecs[:,k],0.5-betas.item()/2))
-                    skewness.append((np.quantile(vecs[:,k],0.5+betas.item()/2)+np.quantile(vecs[:,k],0.5-betas.item()/2)-2*np.median(vecs[:,k]))/(np.quantile(vecs[:,k],0.5+betas.item()/2)-np.quantile(vecs[:,k],0.5-betas.item()/2)))
             elif moment=='kurtosis':
                 betas=torch.tensor([0.2,0.98])
-                for k in range(2):
-                    kurtosis.append((np.quantile(vecs[:,k],0.5+0.98/2)-np.quantile(vecs[:,k],0.5-0.98/2))/(np.quantile(vecs[:,k],0.5+0.2/2)-np.quantile(vecs[:,k],0.5-0.2/2)))
-        print('dispersion:')
-        print(dispersion)
-        print('skewness:')
-        print(skewness)
-        print('kurtosis:')
-        print(kurtosis)
         quantiles=quantile(x, 0, origin, torch.unsqueeze(originradial[0,:],0)) # frechet median
         median=quantiles.detach().clone()
         xis=pt(origin,originradial,median) # xi at frechet median
