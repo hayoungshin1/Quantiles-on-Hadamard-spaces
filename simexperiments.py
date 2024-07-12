@@ -143,7 +143,7 @@ for moment in ['dispersion', 'skewness', 'kurtosis', 'sasymmetry']:
                 for j in range(int(m/2)):
                     opps[j,:]=lift[j,:]+lift[j+int(m/2),:]
                 supskewness.append(torch.max(mag(opps)).item()/supinterrange)
-                aveskewness.append(mag(torch.unsqueeze(torch.mean(opps,0),0))/aveinterrange)
+                aveskewness.append((mag(torch.unsqueeze(torch.mean(opps,0),0))/aveinterrange).item())
             elif moment=='kurtosis':
                 for j in range(int(m/2)):
                     opps[j,:]=lift[j,:]+lift[j+int(m/2),:]
