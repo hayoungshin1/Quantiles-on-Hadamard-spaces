@@ -63,13 +63,13 @@ for moment in ['other', 'kurtosis']:
             supdispersion.append(supinterrange)
             avedispersion.append(aveinterrange)
             for j in range(int(len(xis)/2)):
-                opps[j,:]=lift[j,:]+lift[j+int(len(xis)/2),:]
+                opps[j,:]=lift[j+1,:]+lift[j+1+int(len(xis)/2),:]
             supskewness.append(torch.max(mag(opps)).item()/supinterrange)
             aveskewness.append((mag(torch.unsqueeze(torch.mean(opps,0)/2,0))/aveinterrange).item())
             sasymmetry.append(torch.abs(torch.log(torch.max(mag(lift[1:,:]))/torch.min(mag(lift[1:,:])))).item())
         elif moment=='kurtosis':
             for j in range(int(len(xis)/2)):
-                opps[j,:]=lift[j,:]+lift[j+int(len(xis)/2),:]
+                opps[j,:]=lift[j+1+len(xis),:]+lift[j+1+3*int(len(xis)/2),:]
             supkurtosis.append(torch.max(mag(opps)).item()/supinterrange)
             avekurtosis.append(torch.mean(mag(opps)).item()/aveinterrange)
         print('supdispersion:')
