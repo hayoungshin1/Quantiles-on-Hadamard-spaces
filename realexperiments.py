@@ -42,7 +42,6 @@ for moment in ['other', 'kurtosis']:
         if extreme=='yes':
             if moment=='other':
                 betas=torch.tensor([0.98])
-                for k in range(2):
             elif moment=='kurtosis':
                 betas=torch.tensor([0.2,0.98])
         quantiles=quantile(x, 0, origin, torch.unsqueeze(originradial[0,:],0)) # frechet median
