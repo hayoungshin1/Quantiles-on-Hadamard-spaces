@@ -157,17 +157,14 @@ for moment in ['dispersion', 'skewness', 'kurtosis', 'sasymmetry']:
                 plt.plot(np.append(quantiles[i*m:((i+1)*m)].cpu().numpy()[:,0],quantiles[i*m:((i+1)*m)].cpu().numpy()[:,0][0])
             , np.append(quantiles[i*m:((i+1)*m)].cpu().numpy()[:,1],quantiles[i*m:((i+1)*m)].cpu().numpy()[:,1][0])
             , c=color)
-            #if moment=='dispersion':
             print('supdispersion:')
             print(supdispersion)
             print('avedispersion:')
             print(avedispersion)
-            #elif moment=='skewness':
             print('supskewness:')
             print(supskewness)
             print('aveskewness:')
             print(aveskewness)
-            #elif moment=='kurtosis':
             print('supkurtosis:')
             print(supkurtosis)
             print('avekurtosis:')
