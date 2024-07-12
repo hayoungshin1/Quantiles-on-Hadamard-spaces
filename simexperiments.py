@@ -135,20 +135,20 @@ for moment in ['dispersion', 'skewness', 'kurtosis', 'sasymmetry']:
                 interranges[j]=mag(torch.unsqueeze(lift[j,:]-lift[j+int(m/2),:],0))
             supinterrange=torch.max(interranges).item()
             aveinterrange=torch.mean(interranges).item()
-            opps=torch.zeros(int(m/2))
+            opps=torch.zeros(int(m/2),3)
             if moment=='dispersion':
                 supdispersion.append(supinterrange)
                 avedispersion.append(aveinterrange)
             elif moment=='skewness':
                 for j in range(int(m/2)):
-                    opps[j]=mag(torch.unsqueeze(lift[j,:]+lift[j+int(m/2),:],0))
-                supskewness.append(torch.max(opps).item()/supinterrange)
-                aveskewness.append(torch.mean(opps).item()/aveinterrange)
+                    opps[j,:]=lift[j,:]+lift[j+int(m/2),:]
+                supskewness.append(torch.max(mag(opps)).item()/supinterrange)
+                aveskewness.append(mag(torch.unsqueeze(torch.mean(opps,0),0))/aveinterrange)
             elif moment=='kurtosis':
                 for j in range(int(m/2)):
-                    opps[j]=mag(torch.unsqueeze(lift[j+m,:]-lift[j+3*int(m/2),:],0))
-                supkurtosis.append(torch.max(opps).item()/supinterrange)
-                avekurtosis.append(torch.mean(opps).item()/aveinterrange)
+                    opps[j,:]=lift[j,:]+lift[j+int(m/2),:]
+                supkurtosis.append(torch.max(mag(opps)).item()/supinterrange)
+                avekurtosis.append(torch.mean(mag(opps)).item()/aveinterrange)
             elif moment=='sasymmetry':
                 sasymmetry.append(torch.abs(torch.log(torch.max(mag(lift))/torch.min(mag(lift)))).item())
             quantiles=H2B(quantiles)
