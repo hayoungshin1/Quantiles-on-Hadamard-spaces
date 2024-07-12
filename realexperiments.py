@@ -37,13 +37,29 @@ for moment in ['other', 'kurtosis']:
         if extreme=='no':
             if moment=='other':
                 betas=torch.tensor([0.5])
+                for k in range(2):
+                    dispersion.append(np.quantile(vecs[:,k],0.5+betas.item()/2)-np.quantile(vecs[:,k],0.5-betas.item()/2))
+                    skewness.append((np.quantile(vecs[:,k],0.5+betas.item()/2)+np.quantile(vecs[:,k],0.5-betas.item()/2)-2*np.median(vecs[:,k]))/(np.quantile(vecs[:,k],0.5+betas.item()/2)-np.quantile(vecs[:,k],0.5-betas.item()/2)))
             elif moment=='kurtosis':
                 betas=torch.tensor([0.2,0.8])
+                for k in range(2):
+                    kurtosis.append((np.quantile(vecs[:,k],0.5+betas[1].item()/2)-np.quantile(vecs[:,k],0.5-betas[1].item()/2))/(np.quantile(vecs[:,k],0.5+betas[0].item()/2)-np.quantile(vecs[:,k],0.5-betas[0].item()/2)))
         if extreme=='yes':
             if moment=='other':
                 betas=torch.tensor([0.98])
+                for k in range(2):
+                    dispersion.append(np.quantile(vecs[:,k],0.5+betas.item()/2)-np.quantile(vecs[:,k],0.5-betas.item()/2))
+                    skewness.append((np.quantile(vecs[:,k],0.5+betas.item()/2)+np.quantile(vecs[:,k],0.5-betas.item()/2)-2*np.median(vecs[:,k]))/(np.quantile(vecs[:,k],0.5+betas.item()/2)-np.quantile(vecs[:,k],0.5-betas.item()/2)))
             elif moment=='kurtosis':
                 betas=torch.tensor([0.2,0.98])
+                for k in range(2):
+                    kurtosis.append((np.quantile(vecs[:,k],0.5+0.98/2)-np.quantile(vecs[:,k],0.5-0.98/2))/(np.quantile(vecs[:,k],0.5+0.2/2)-np.quantile(vecs[:,k],0.5-0.2/2)))
+        print('dispersion:')
+        print(dispersion)
+        print('skewness:')
+        print(skewness)
+        print('kurtosis:')
+        print(kurtosis)
         quantiles=quantile(x, 0, origin, torch.unsqueeze(originradial[0,:],0)) # frechet median
         median=quantiles.detach().clone()
         xis=pt(origin,originradial,median) # xi at frechet median
@@ -57,31 +73,28 @@ for moment in ['other', 'kurtosis']:
             interranges[j]=mag(torch.unsqueeze(lift[j+1,:]-lift[j+1+int(len(xis)/2),:],0))
         supinterrange=torch.max(interranges).item()
         aveinterrange=torch.mean(interranges).item()
-        opps=torch.zeros(int(len(xis)/2))
+        opps=torch.zeros(int(len(xis)/2),3)
         if moment=='other':
             supdispersion.append(supinterrange)
             avedispersion.append(aveinterrange)
             for j in range(int(len(xis)/2)):
-                opps[j]=mag(torch.unsqueeze(lift[j+1,:]+lift[j+1+int(len(xis)/2),:],0))
-            supskewness.append(torch.max(opps).item()/supinterrange)
-            aveskewness.append(torch.mean(opps).item()/aveinterrange)
+                opps[j,:]=lift[j,:]+lift[j+int(len(xis)/2),:]
+            supskewness.append(torch.max(mag(opps)).item()/supinterrange)
+            aveskewness.append((mag(torch.unsqueeze(torch.mean(opps,0)/2,0))/aveinterrange).item())
             sasymmetry.append(torch.abs(torch.log(torch.max(mag(lift[1:,:]))/torch.min(mag(lift[1:,:])))).item())
         elif moment=='kurtosis':
             for j in range(int(len(xis)/2)):
-                opps[j]=mag(torch.unsqueeze(lift[j+1+len(xis),:]-lift[j+1+3*int(len(xis)/2),:],0))
-            supkurtosis.append(torch.max(opps).item()/supinterrange)
-            avekurtosis.append(torch.mean(opps).item()/aveinterrange)
-        #if moment=='dispersion':
+                opps[j,:]=lift[j,:]+lift[j+int(len(xis)/2),:]
+            supkurtosis.append(torch.max(mag(opps)).item()/supinterrange)
+            avekurtosis.append(torch.mean(mag(opps)).item()/aveinterrange)
         print('supdispersion:')
         print(supdispersion)
         print('avedispersion:')
         print(avedispersion)
-        #elif moment=='skewness':
         print('supskewness:')
         print(supskewness)
         print('aveskewness:')
         print(aveskewness)
-        #elif moment=='kurtosis':
         print('supkurtosis:')
         print(supkurtosis)
         print('avekurtosis:')
