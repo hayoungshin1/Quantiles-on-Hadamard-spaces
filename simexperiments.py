@@ -31,8 +31,6 @@ for moment in ['dispersion', 'skewness', 'kurtosis', 'sasymmetry']:
         copy=torch.Tensor(vecs)
         copy=torch.concat((torch.zeros(b,1),copy),dim=1)
         x=exp(origin, copy)
-        #median=quantile(x, 0, origin, torch.unsqueeze(originradial[0,:],0))
-        #print(mag(log(origin,median)))
         x=H2B(x)
         # draw figure
         f = plt.figure(figsize=(7,7))
@@ -122,9 +120,7 @@ for moment in ['dispersion', 'skewness', 'kurtosis', 'sasymmetry']:
             copy=torch.Tensor(vecs)
             copy=torch.concat((torch.zeros(b,1),copy),dim=1)
             x=exp(origin, copy)
-            #median=quantile(x, 0, origin, torch.unsqueeze(originradial[0,:],0)) # frechet median
             quantiles=torch.empty(0,3)
-            #xis=pt(origin,originradial,median) # xi at frechet median
             for i in range(len(betas)):
                 for j in range(m):
                     quantiles=torch.concat((quantiles,quantile(x, betas[i].item(), origin, torch.unsqueeze(originradial[j,:],0))),dim=0)
