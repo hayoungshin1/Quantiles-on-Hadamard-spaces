@@ -8,13 +8,7 @@ originradial[:,1]=torch.cos(angles)
 originradial[:,2]=torch.sin(angles)
 
 which='real'
-if which=='sim':
-    np.random.seed(10)
-    x=np.random.normal(0,0.3,(100,2))
-    x=torch.Tensor(x)
-    #x[:,1]/=4
-    x=B2H(x)
-elif which=='real':
+if which=='real':
     data=np.load('olsson_poincare_embedding.npz')
     x=np.concatenate((data['x_train'],data['x_test']),axis=0)
     y=np.concatenate((data['y_train'],data['y_test']),axis=0)
