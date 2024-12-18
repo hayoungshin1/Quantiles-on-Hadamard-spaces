@@ -56,8 +56,40 @@ def log(p, x):
     t=torch.unsqueeze(mag(v),1)
     unitv=v/t
     out=torch.unsqueeze(theta,1)*unitv
-    #for j in [i for i, x in enumerate(t<1e-5) if x]: # log should be 0 when p=x_j
-    #    out[j,:]=0
+    return out
+
+def alog(x, p):
+    """
+    x: batch of points in H^n (b,n+1)
+    p: point in H^n (1,n+1)
+    out: each log_x(p) (b,n+1)
+    """
+    p=p/torch.sqrt(-ip(p,p)) # reprojects p onto the manifold, for precision
+    x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),dim=1) # reprojects x onto the manifold, for precision
+    a=ip(p,x)
+    a=torch.clamp(a,max=-1) # ensures -a is at least 1
+    theta=torch.acosh(-a)
+    v=p+torch.unsqueeze(ip(x,p),1)*x
+    t=torch.unsqueeze(mag(v),1)
+    unitv=v/t
+    out=torch.unsqueeze(theta,1)*unitv
+    return out
+
+def newlog(y, z):
+    """
+    y: batch of points in H^n (b,n+1)
+    z: point in H^n (b,n+1)
+    out: each log_y(z) (b,n+1)
+    """
+    y=y/torch.unsqueeze(torch.sqrt(-ip(y,y)),dim=1) # reprojects y onto the manifold, for precision
+    z=z/torch.unsqueeze(torch.sqrt(-ip(z,z)),dim=1) # reprojects z onto the manifold, for precision
+    a=ip(y,z)
+    a=torch.clamp(a,max=-1) # ensures -a is at least 1
+    theta=torch.acosh(-a)
+    v=z+torch.unsqueeze(ip(y,z),1)*y
+    t=torch.unsqueeze(mag(v),1)
+    unitv=v/t
+    out=torch.unsqueeze(theta,1)*unitv
     return out
 
 def direct(p,y,xiy):
@@ -215,25 +247,6 @@ def frechetmean(x, tol=1e-100):
             lr=lr/2
             count+=1
     out=current_p
-    return out
-
-def alog(x, p):
-    """
-    x: batch of points in H^n (b,n+1)
-    p: point in H^n (1,n+1)
-    out: each log_x(p) (b,n+1)
-    """
-    p=p/torch.sqrt(-ip(p,p)) # reprojects p onto the manifold, for precision
-    x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),dim=1) # reprojects x onto the manifold, for precision
-    a=ip(p,x)
-    a=torch.clamp(a,max=-1) # ensures -a is at least 1
-    theta=torch.acosh(-a)
-    v=p+torch.unsqueeze(ip(x,p),1)*x
-    t=torch.unsqueeze(mag(v),1)
-    unitv=v/t
-    out=torch.unsqueeze(theta,1)*unitv
-    #for j in [i for i, x in enumerate(t<1e-5) if x]: # log should be 0 when p=x_j
-    #    out[j,:]=0
     return out
 
 def pt(x, v, p):
