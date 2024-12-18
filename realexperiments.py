@@ -14,7 +14,6 @@ if which=='real':
     y=np.concatenate((data['y_train'],data['y_test']),axis=0)
     x=torch.Tensor(x)
     x=B2H(x)
-    #x=x[y==3]
 
 supdispersion=[]
 avedispersion=[]
