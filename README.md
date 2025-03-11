@@ -1,4 +1,5 @@
 # Quantiles-on-Hadamard-spaces
 Code for the paper 'Quantiles on global non-positive curvature spaces'. 
 
-Functions are contained in functions.py, the experiments on simulated data in simexperiments.py and the experiments on real data in realexperiments.py. For the real data experiments, the raw data are available at \url{https://github.com/facebookresearch/PoincareMaps/blob/main/datasets/Olsson.csv}, and the processed data in the Poincar\'e disk are available at \url{https://github.com/thupchnsky/PoincareLinearClassification/blob/main/embedding/olsson_poincare_embedding.npz}.
+Functions are contained in functions.py, the experiments on simulated data in simexperiments.py, the outlier experiments on real single-cell RNA sequencing data in realoutlierexperiments.py and the permutation test experiments on real single-cell gene expression data in realpermutationexperiments.py. The single-cell RNA sequencing data, embedded in the Poincar\'e disk, are available at \url{https://github.com/thupchnsky/PoincareLinearClassification/blob/main/embedding/olsson_poincare_embedding.npz}. The single-cell gene epxpression data, embedded in the Poincar\'e disk, are available at \url{https://github.com/yangshengaa/stable-hyperbolic/blob/main/data/svm/moignard/moignard_poincare_embedding.npz}.
+
