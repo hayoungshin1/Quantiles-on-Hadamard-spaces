@@ -43,7 +43,6 @@ for color in range(3,5):
 x=B2H(x)
 medpvalues=np.array([])
 quantpvalues=np.array([])
-newquantpvalues=np.array([])
 
 distr1=x[y==3]
 distr2=x[y==4]
@@ -65,7 +64,6 @@ for inst in range(insts):
     quantstat=torch.sum(mag(newlog(x1quantiles,x2quantiles))).item()
     medsum=0
     quantsum=0
-    newquantsum=0
     totalx=torch.concat((x1,x2),0)
     #reps=5000
     reps=10000
@@ -83,7 +81,7 @@ for inst in range(insts):
         permquantstat=torch.sum(mag(newlog(permx1quantiles,permx2quantiles))).item()
         medsum+=(permmedstat>=medstat)
         quantsum+=(permquantstat>=quantstat)
-        print(inst,k,medsum,quantsum,newquantsum)
+        print(inst,k,medsum,quantsum)
     medpvalues=np.append(medpvalues,medsum/reps)
     quantpvalues=np.append(quantpvalues,quantsum/reps)
     print(np.sum(medpvalues>0.1),np.sum(medpvalues>0.05),np.sum(medpvalues>0.01),np.sum(medpvalues>0.005),np.sum(medpvalues>0.001),np.mean(medpvalues),np.quantile(medpvalues,np.array([0.25,0.5,0.75])))
