@@ -51,7 +51,7 @@ distr2=x[y==4]
 insts=1000
 draws=120
 tolerance=1e-6
-for inst in range(625,750):
+for inst in range(insts):
     np.random.seed(inst)
     x1=distr1[np.random.choice(distr1.shape[0],draws),:]
     x2=distr2[np.random.choice(distr2.shape[0],draws),:]
