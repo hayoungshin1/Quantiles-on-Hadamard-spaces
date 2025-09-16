@@ -310,3 +310,38 @@ def geometric_median(X, eps=1e-10):
         if euclidean(y, y1) < eps:
             return y1
         y = y1
+
+def ip2(p,q):
+    """
+    p: B batches of N' points in hyperboloid (B,1 or N',n+1,1)
+    q: B batches of N' points in hyperboloid (B,1 or N',n+1,1)
+    out: B batches of inner products of p and q (B,1 or N',1,1)
+    """
+    newq=q.copy()
+    newq[:,:,0,:]*=-1
+    out=np.sum(p*newq,axis=2,keepdims=True)
+    return out
+
+def fastmean(Y,tol=1e-100):
+    """
+    Y: B batches of N data points in hyperboloid (B,N,n+1,1)
+    out: B batches of weighted Fr'echet means  (B,1,n+1,1)
+    """
+    N=np.shape(Y)[1]
+    old=Y[:,0,:,:]
+    old=np.expand_dims(old,1) #(B,1,n+1,1)
+    current=np.copy(old) #(B,1,n+1,1)
+    count=1
+    while (count==1 or np.sum(np.arccosh(-ip2(old,current))>tol)>0) and count<1000:
+        prod=-ip2(Y,current) #(B,N,1,1)
+        paran=2*np.arccosh(prod)/np.sqrt(prod**2-1) #(B,N,1,1)
+        indices=np.where(np.abs(prod-1)<tol)[0:2]
+        paran[indices]=2
+        u=paran*Y/N #(B,N,n+1,1)
+        usum=np.sum(u,axis=1,keepdims=True) #(B,1,n+1,1)
+        denom=np.sqrt(np.absolute(-ip2(usum,usum)))
+        old=np.copy(current)
+        current=usum/denom #(B,1,n+1,1)
+        count+=1
+    out=current
+    return out
