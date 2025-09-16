@@ -41,6 +41,7 @@ for color in range(3,5):
     plt.axis('equal')
     plt.show(block=False)
 
+
 x=B2H(x)
 indivquantpvalues=(1+len(betas)*len(originradial))*[np.array([])]
 betaquantpvalues=len(betas)*[np.array([])]#####
