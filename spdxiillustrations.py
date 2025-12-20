@@ -178,7 +178,7 @@ finalcfa=np.zeros((x.shape[0],len(betas),1,3))
 
 for k in range(3):
     if k==0:
-        xi1=torch.tensor([[[0,1,0],[1,0,0],[0,0,0]]])/np.sqrt(2)
+        xi1=torch.tensor([[[1,0,0],[0,1,0],[0,0,0]]])/np.sqrt(2)    
     elif k==1:
         xi1=torch.tensor([[[0,0,1],[0,0,0],[1,0,0]]])/np.sqrt(2)
     elif k==2:
