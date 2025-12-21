@@ -7,7 +7,6 @@ angles=2*torch.arange(0,m)*math.pi/m
 originradial[:,1]=torch.cos(angles)
 originradial[:,2]=torch.sin(angles)
 betas=torch.tensor([0.5,0.9])
-#betas=torch.tensor([0.8])
 
 data=np.load('Downloads/moignard_poincare_embedding.npz')
 x=np.concatenate((data['x_train'],data['x_test']),axis=0)
@@ -44,12 +43,13 @@ for color in range(3,5):
 
 x=B2H(x)
 indivquantpvalues=(1+len(betas)*len(originradial))*[np.array([])]
-betaquantpvalues=len(betas)*[np.array([])]#####
+betaquantpvalues=len(betas)*[np.array([])]
 meanpvalues=np.array([])
 quantpvalues=np.array([])
 
-distr1=x[y==3]
-distr2=x[y==4]
+# distr1=x[y==2] # HF stage
+distr1=x[y==3] # NP stage
+distr2=x[y==4] # PS stage
 
 insts=1000
 draws=120
@@ -65,17 +65,17 @@ for inst in range(insts):
     x1quantile=quantile(x1, 0, origin, torch.unsqueeze(originradial[0,:],0),tol=tolerance)
     x2quantile=quantile(x2, 0, origin, torch.unsqueeze(originradial[0,:],0),tol=tolerance)
     indivquantstats[0]=torch.sum(mag(newlog(x1quantile,x2quantile))).item()
-    betaquantstats=np.zeros(len(betas))#####
+    betaquantstats=np.zeros(len(betas))
     for i in range(len(betas)):
-        betaquantstats[i]=0#####
+        betaquantstats[i]=0
         for j in range(len(originradial)):
             x1quantile=quantile(x1, betas[i].item(), origin, torch.unsqueeze(originradial[j,:],0),tol=tolerance)
             x2quantile=quantile(x2, betas[i].item(), origin, torch.unsqueeze(originradial[j,:],0),tol=tolerance)
             indivquantstats[i*len(originradial)+j+1]=torch.sum(mag(newlog(x1quantile,x2quantile))).item()
-            betaquantstats[i]+=indivquantstats[i*len(originradial)+j+1]#####
+            betaquantstats[i]+=indivquantstats[i*len(originradial)+j+1]
     quantstat=np.sum(indivquantstats)
     indivquantsums=(1+len(betas)*len(originradial))*[0]
-    betaquantsums=len(betas)*[0]#####
+    betaquantsums=len(betas)*[0]
     meansum=0
     quantsum=0
     totalx=torch.concat((x1,x2),0)
@@ -93,28 +93,28 @@ for inst in range(insts):
         permx2quantile=quantile(permx2, 0, origin, torch.unsqueeze(originradial[0,:],0),tol=tolerance)
         permindivquantstats[0]=torch.sum(mag(newlog(permx1quantile,permx2quantile))).item()
         indivquantsums[0]+=(permindivquantstats[0]>=indivquantstats[0]).item()
-        permbetaquantstats=np.zeros(len(betas))#####
+        permbetaquantstats=np.zeros(len(betas))
         for i in range(len(betas)):
-            permbetaquantstats[i]=0#####
+            permbetaquantstats[i]=0
             for j in range(len(originradial)):
                 permx1quantile=quantile(permx1, betas[i].item(), origin, torch.unsqueeze(originradial[j,:],0),tol=tolerance)
                 permx2quantile=quantile(permx2, betas[i].item(), origin, torch.unsqueeze(originradial[j,:],0),tol=tolerance)
                 permindivquantstats[i*len(originradial)+j+1]=torch.sum(mag(newlog(permx1quantile,permx2quantile))).item()
                 indivquantsums[i*len(originradial)+j+1]+=(permindivquantstats[i*len(originradial)+j+1]>=indivquantstats[i*len(originradial)+j+1]).item()
-                permbetaquantstats[i]+=permindivquantstats[i*len(originradial)+j+1]#####
-            betaquantsums[i]+=(permbetaquantstats[i]>=betaquantstats[i]).item()#####
+                permbetaquantstats[i]+=permindivquantstats[i*len(originradial)+j+1]
+            betaquantsums[i]+=(permbetaquantstats[i]>=betaquantstats[i]).item()
         permquantstat=np.sum(permindivquantstats)
         quantsum+=(permquantstat>=quantstat)
         print(inst,k,indivquantsums,betaquantsums,meansum,quantsum)
     for i in range(len(indivquantpvalues)):
         indivquantpvalues[i]=np.append(indivquantpvalues[i],indivquantsums[i]/reps)
-    for i in range(len(betaquantpvalues)):#####
-        betaquantpvalues[i]=np.append(betaquantpvalues[i],betaquantsums[i]/reps)#####
+    for i in range(len(betaquantpvalues)):
+        betaquantpvalues[i]=np.append(betaquantpvalues[i],betaquantsums[i]/reps)
     meanpvalues=np.append(meanpvalues,meansum/reps)
     quantpvalues=np.append(quantpvalues,quantsum/reps)
     for i in range(len(indivquantpvalues)):
         print(np.sum(indivquantpvalues[i]>0.1),np.sum(indivquantpvalues[i]>0.05),np.sum(indivquantpvalues[i]>0.01),np.sum(indivquantpvalues[i]>0.005),np.sum(indivquantpvalues[i]>0.001),np.mean(indivquantpvalues[i]),np.quantile(indivquantpvalues[i],np.array([0.25,0.5,0.75])))
-    for i in range(len(betaquantpvalues)):#####
+    for i in range(len(betaquantpvalues)):
         print(np.sum(betaquantpvalues[i]>0.1),np.sum(betaquantpvalues[i]>0.05),np.sum(betaquantpvalues[i]>0.01),np.sum(betaquantpvalues[i]>0.005),np.sum(betaquantpvalues[i]>0.001),np.mean(betaquantpvalues[i]),np.quantile(betaquantpvalues[i],np.array([0.25,0.5,0.75])))#####
     print(np.sum(meanpvalues>0.1),np.sum(meanpvalues>0.05),np.sum(meanpvalues>0.01),np.sum(meanpvalues>0.005),np.sum(meanpvalues>0.001),np.mean(meanpvalues),np.quantile(meanpvalues,np.array([0.25,0.5,0.75])))
     print(np.sum(quantpvalues>0.1),np.sum(quantpvalues>0.05),np.sum(quantpvalues>0.01),np.sum(quantpvalues>0.005),np.sum(quantpvalues>0.001),np.mean(quantpvalues),np.quantile(quantpvalues,np.array([0.25,0.5,0.75])))
