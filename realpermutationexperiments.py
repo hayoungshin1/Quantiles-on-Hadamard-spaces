@@ -119,11 +119,11 @@ for inst in range(insts):
     print(np.sum(meanpvalues>0.1),np.sum(meanpvalues>0.05),np.sum(meanpvalues>0.01),np.sum(meanpvalues>0.005),np.sum(meanpvalues>0.001),np.mean(meanpvalues),np.quantile(meanpvalues,np.array([0.25,0.5,0.75])))
     print(np.sum(quantpvalues>0.1),np.sum(quantpvalues>0.05),np.sum(quantpvalues>0.01),np.sum(quantpvalues>0.005),np.sum(quantpvalues>0.001),np.mean(quantpvalues),np.quantile(quantpvalues,np.array([0.25,0.5,0.75])))
 
-print(np.sum(indivquantpvalues[0]>0.1)/insts,np.sum(meanpvalues>0.1)/insts,np.sum(quantpvalues>0.1)/insts)
-print(np.sum(indivquantpvalues[0]>0.05)/insts,np.sum(meanpvalues>0.05)/insts,np.sum(quantpvalues>0.05)/insts)
-print(np.sum(indivquantpvalues[0]>0.01)/insts,np.sum(meanpvalues>0.01)/insts,np.sum(quantpvalues>0.01)/insts)
-print(np.sum(indivquantpvalues[0]>0.005)/insts,np.sum(meanpvalues>0.005)/insts,np.sum(quantpvalues>0.005)/insts)
-print(np.sum(indivquantpvalues[0]>0.001)/insts,np.sum(meanpvalues>0.001)/insts,np.sum(quantpvalues>0.001)/insts)
+print(np.mean(indivquantpvalues[0]>0.1),np.mean(meanpvalues>0.1),np.mean(quantpvalues>0.1))
+print(np.mean(indivquantpvalues[0]>0.05),np.mean(meanpvalues>0.05),np.mean(quantpvalues>0.05))
+print(np.mean(indivquantpvalues[0]>0.01),np.mean(meanpvalues>0.01),np.mean(quantpvalues>0.01))
+print(np.mean(indivquantpvalues[0]>0.005),np.mean(meanpvalues>0.005),np.mean(quantpvalues>0.005))
+print(np.mean(indivquantpvalues[0]>0.001),np.mean(meanpvalues>0.001),np.mean(quantpvalues>0.001))
 print(np.mean(indivquantpvalues[0]>quantpvalues),np.mean(indivquantpvalues[0]<quantpvalues))
 print(np.mean(meanpvalues>quantpvalues),np.mean(meanpvalues<quantpvalues))
 
