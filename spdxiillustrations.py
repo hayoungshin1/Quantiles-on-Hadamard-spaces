@@ -180,9 +180,9 @@ for k in range(3):
     if k==0:
         xi1=torch.tensor([[[0,0,1],[0,0,0],[1,0,0]]])/np.sqrt(2)
     elif k==1:
-        xi1=torch.tensor([[[0,0,0],[0,0,1],[0,1,0]]])/np.sqrt(2)
-    elif k==2:
         xi1=torch.tensor([[[1,0,0],[0,1,0],[0,0,0]]])/np.sqrt(2)  
+    elif k==2:
+        xi1=torch.tensor([[[1,0,0],[0,1,0],[0,0,1]]])/np.sqrt(3)  
     xis=direct(xhalf, xhalfinv, identity, identity, xi1)
     for i in range(x.shape[0]):
         for j in range(len(betas)):
