@@ -47,10 +47,10 @@ betaquantpvalues=len(betas)*[np.array([])]
 meanpvalues=np.array([])
 quantpvalues=np.array([])
 
-distr1=x[y==2] # HF stage
-distr2=x[y==3] # NP stage
-# distr1=x[y==3] # NP stage
-# distr2=x[y==4] # PS stage
+#distr1=x[y==2] # HF stage
+#distr2=x[y==3] # NP stage
+distr1=x[y==3] # NP stage
+distr2=x[y==4] # PS stage
 
 insts=1000
 draws=120
