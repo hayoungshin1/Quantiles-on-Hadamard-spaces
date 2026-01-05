@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 from operator import itemgetter
 from scipy.spatial.distance import cdist, euclidean
+from sklearn.covariance import MinCovDet, EmpiricalCovariance
 
 def ip(v1, v2):
     """
