@@ -150,36 +150,25 @@ def quantile(x, beta, y, xiy, tol=1e-100):
     """
     x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),1) # reprojects x onto the manifold, for precision
     xiy=xiy/torch.sqrt(torch.sum(xiy*xiy)) # ensures xiy is unit vector
-    #current_p=torch.unsqueeze(x[0,:],0) # initial estimate for quantile
     current_p=torch.unsqueeze(torch.concat((torch.ones(1),torch.zeros(x.shape[1]-1))),0) # initial estimate for quantile
-    old_p=current_p.detach().clone()
     current_loss=loss(current_p,x,beta,y,xiy)
-    #print(current_loss)
     lr=0.001
     step=-grad(current_p,x,beta,y,xiy)
     step/=mag(step)
-    #count=0
     count=0
-    #while (count==0 or (dist(old_p,current_p)>tol and count<1000 and acount<1000)):
     while lr>tol and count<1000:
         new_p=exp(current_p,lr*step).float()
         new_loss=loss(new_p,x,beta,y,xiy)
-        #print(new_loss)
         if (new_loss<=current_loss):
-            old_p=current_p
             current_p=new_p
             current_loss=new_loss
             step=-grad(current_p,x,beta,y,xiy)
             step/=mag(step)
             lr=1.1*lr # try to speed up convergence by increasing learning rate
-            #count+=1
         else:
             lr=lr/2
             count+=1
     out=current_p
-    #if count==1000:
-    #    print(count,acount)
-    #print(lr)
     return out
 
 def H2B(p):
