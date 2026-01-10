@@ -7,9 +7,6 @@ from itertools import combinations
 from operator import itemgetter
 from scipy.spatial.distance import cdist, euclidean
 from sklearn.covariance import MinCovDet, EmpiricalCovariance
-import stat
-import time
-from scipy.stats import skewnorm, t
 
 def ip(v1, v2):
     """
