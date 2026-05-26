@@ -8,6 +8,7 @@ from operator import itemgetter
 from scipy.spatial.distance import cdist, euclidean
 from torch.autograd.functional import jacobian, hessian
 from scipy.stats import chi2
+from sklearn.covariance import MinCovDet, EmpiricalCovariance
 
 def ip(v1, v2):
     """
