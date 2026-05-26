@@ -4,6 +4,7 @@ import stat
 import time
 import matplotlib.pyplot as plt
 from scipy.stats import skewnorm, t
+from scipy.stats import chi2
 
 def check(u,X):
     n=X.shape[0]
@@ -27,6 +28,26 @@ def euclideanloss(uprime,Xprime,q):
     norm=np.sqrt(np.sum(diff**2,axis=1)) # (M,N)
     inner=np.sum(diff*uprime,axis=1)
     return np.sum(norm,axis=1)+np.sum(inner,axis=1) # shape is (M,)
+
+def euclideanjacobianhessian(u,X,q):
+    X=np.transpose(X,(1,0))
+    n=X.shape[0]
+    N=X.shape[1]
+    M=u.shape[0]
+    Xprime=np.expand_dims(X,0) # (1,n,N)
+    uprime=np.expand_dims(u,2) # (M,n,1)
+    qprime=np.expand_dims(q,2)
+    diff=Xprime-qprime # (M,n,N)
+    norm=np.sqrt(np.sum(diff**2,axis=1)) # (M,N)
+    jacob=diff/np.expand_dims(norm,1) # (M,n,N)
+    pos=np.where(norm==0)
+    jacob[pos[0],:,pos[1]]=0
+    jacob+=uprime # (M,n,N)
+    jacob=np.transpose(jacob,(0,2,1)) # (M,N,n)
+    norminv=1/norm
+    norminv[norm==0]=0
+    hess=np.expand_dims(norminv,(2,3))*np.expand_dims(np.identity(n),(0,1))-(np.transpose(np.expand_dims(diff,3),(0,2,1,3))*np.expand_dims(norminv**3,(2,3)))@np.expand_dims(np.transpose(diff,(0,2,1)),2) # (M,N,n,n)
+    return jacob, hess
 
 def euclideanquantile(u,X,tol=1e-10,most=30): # Newton's method
     X=np.transpose(X,(1,0))
@@ -122,12 +143,12 @@ x=torch.Tensor(x)
 x=B2H(x)
 x=log(origin,x)[:,1:3].numpy()
 
-quantpvalues=np.array([])
+permquantpvalues=np.array([])
 
-distr1=x[y==2] # HF stage
-distr2=x[y==3] # NP stage
-#distr1=x[y==3] # NP stage
-#distr2=x[y==4] # PS stage
+#distr1=x[y==2] # HF stage
+#distr2=x[y==3] # NP stage
+distr1=x[y==3] # NP stage
+distr2=x[y==4] # PS stage
 
 insts=1000
 draws=120
@@ -151,13 +172,63 @@ for inst in range(insts):
         permquantstat=np.sum(np.sqrt(np.sum((permx1quantile-permx2quantile)**2,axis=1)))
         quantsum+=(permquantstat>=quantstat)
         print(inst,k,quantsum)
-    print(np.sum(quantpvalues>0.1),np.sum(quantpvalues>0.05),np.sum(quantpvalues>0.01),np.sum(quantpvalues>0.005),np.sum(quantpvalues>0.001),np.mean(quantpvalues),np.quantile(quantpvalues,np.array([0.25,0.5,0.75])))
+    permquantpvalues=np.append(permquantpvalues,quantsum/reps)
+    print(np.sum(permquantpvalues>0.1),np.sum(permquantpvalues>0.05),np.sum(permquantpvalues>0.01),np.sum(permquantpvalues>0.005),np.sum(permquantpvalues>0.001),np.mean(permquantpvalues),np.quantile(permquantpvalues,np.array([0.25,0.5,0.75])))
 
-print(np.mean(quantpvalues>0.1))
-print(np.mean(quantpvalues>0.05))
-print(np.mean(quantpvalues>0.01))
-print(np.mean(quantpvalues>0.005))
-print(np.mean(quantpvalues>0.001))
+print(np.mean(permquantpvalues>0.1))
+print(np.mean(permquantpvalues>0.05))
+print(np.mean(permquantpvalues>0.01))
+print(np.mean(permquantpvalues>0.005))
+print(np.mean(permquantpvalues>0.001))
 
-print(np.mean(quantpvalues))
+print(np.mean(permquantpvalues))
 
+## asymptotic experiments
+
+insts=1000
+draws=120
+tolerance=1e-6
+K=len(betas)*m+1
+
+asympquantpvalues=np.zeros(insts)
+
+distr1=x[y==2] # HF stage
+distr2=x[y==3] # NP stage
+#distr1=x[y==3] # NP stage
+#distr2=x[y==4] # PS stage
+
+for inst in range(insts):
+    np.random.seed(inst)
+    x1=distr1[np.random.choice(distr1.shape[0],draws),:]
+    x2=distr2[np.random.choice(distr2.shape[0],draws),:]
+    x1quantiles=euclideanquantile(u,x1,tol=1e-10,most=30) # (K,n)
+    x2quantiles=euclideanquantile(u,x2,tol=1e-10,most=30) # (K,n)
+    x1jacobians=np.zeros((draws,K*n))
+    x1hessians=np.zeros((draws,K*n,K*n))
+    x2jacobians=np.zeros((draws,K*n))
+    x2hessians=np.zeros((draws,K*n,K*n))
+    for k in range(K):
+        jacobhess1=euclideanjacobianhessian(u[k:(k+1),:],x1,x1quantiles[k:(k+1),:])
+        x1jacobians[:,k*n:(k+1)*n]=np.squeeze(jacobhess1[0])
+        x1hessians[:,k*n:(k+1)*n,k*n:(k+1)*n]=np.squeeze(jacobhess1[1])
+        jacobhess2=euclideanjacobianhessian(u[k:(k+1),:],x2,x2quantiles[k:(k+1),:])
+        x2jacobians[:,k*n:(k+1)*n]=np.squeeze(jacobhess2[0])
+        x2hessians[:,k*n:(k+1)*n,k*n:(k+1)*n]=np.squeeze(jacobhess2[1])
+    lambdainv1=np.linalg.inv(np.mean(x1hessians,axis=0))
+    sigma1=np.cov(x1jacobians,rowvar=False)
+    var1=np.matmul(lambdainv1,np.matmul(sigma1,lambdainv1))
+    lambdainv2=np.linalg.inv(np.mean(x2hessians,axis=0))
+    sigma2=np.cov(x2jacobians,rowvar=False)
+    var2=np.matmul(lambdainv2,np.matmul(sigma2,lambdainv2))
+    chai=(x1quantiles-x2quantiles).flatten()
+    quantstat=draws*np.matmul(chai,np.matmul(np.linalg.inv(var1+var2),chai))
+    asympquantpvalues[inst]=1-chi2.cdf(quantstat,K*n)
+    print(np.sum(asympquantpvalues>0.1),np.sum(asympquantpvalues>0.05),np.sum(asympquantpvalues>0.01),np.sum(asympquantpvalues>0.005),np.sum(asympquantpvalues>0.001),np.mean(asympquantpvalues),np.quantile(asympquantpvalues,np.array([0.25,0.5,0.75])))
+
+print(np.mean(asympquantpvalues>0.1))
+print(np.mean(asympquantpvalues>0.05))
+print(np.mean(asympquantpvalues>0.01))
+print(np.mean(asympquantpvalues>0.005))
+print(np.mean(asympquantpvalues>0.001))
+
+print(np.mean(asympquantpvalues))
