@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 from operator import itemgetter
 from scipy.spatial.distance import cdist, euclidean
-from sklearn.covariance import MinCovDet, EmpiricalCovariance
+from torch.autograd.functional import jacobian, hessian
+from scipy.stats import chi2
 
 def ip(v1, v2):
     """
@@ -14,8 +15,7 @@ def ip(v1, v2):
     v2: batch of vectors (b,n+1) or (1,n+1)
     out: (b)
     """
-    copy=v1.detach().clone()
-    copy[:,0]=-copy[:,0]
+    copy = torch.cat([-v1[:, :1], v1[:, 1:]], dim=1)
     out=torch.sum(copy*v2, dim=1)
     return out
 
@@ -25,7 +25,7 @@ def mag(v1):
     out: (b)
     """
     sq=ip(v1, v1)
-    out=torch.sqrt(torch.clamp(sq,min=0)) # ensures out is real
+    out=torch.sqrt(torch.clamp(sq,min=1e-15)) 
     return out
 
 def exp(p, v):
@@ -36,10 +36,10 @@ def exp(p, v):
     """
     p=p/torch.sqrt(-ip(p,p)) # reprojects p onto the manifold, for precision
     theta=torch.unsqueeze(mag(v),1)
-    unitv=v/theta
-    out=torch.cosh(theta)*p+torch.sinh(theta)*unitv
-    for each in ((theta==0).nonzero())[:,0]:
-        out[each,:]=torch.squeeze(p,0)
+    safe_theta = torch.where(theta == 0, torch.ones_like(theta), theta)
+    unitv=v/safe_theta
+    calculated_out=torch.cosh(theta)*p+torch.sinh(theta)*unitv
+    out = torch.where(theta == 0, p, calculated_out)
     out=out/torch.unsqueeze(torch.sqrt(-ip(out,out)),1) # reprojects out onto the manifold, for precision
     return out
 
@@ -51,11 +51,12 @@ def log(p, x):
     """
     p=p/torch.sqrt(-ip(p,p)) # reprojects p onto the manifold, for precision
     a=ip(p,x)
-    a=torch.clamp(a,max=-1) # ensures -a is at least 1
+    a=torch.clamp(a,max=-1.0 - 1e-7) # ensures -a is at least slightly > 1 for safe acosh derivative
     theta=torch.acosh(-a)
     v=x+torch.matmul(torch.unsqueeze(ip(p,x),1),p)
     t=torch.unsqueeze(mag(v),1)
-    unitv=v/t
+    safe_t = torch.where(t == 0, torch.ones_like(t), t)
+    unitv=v/safe_t
     out=torch.unsqueeze(theta,1)*unitv
     return out
 
@@ -68,11 +69,12 @@ def alog(x, p):
     p=p/torch.sqrt(-ip(p,p)) # reprojects p onto the manifold, for precision
     x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),dim=1) # reprojects x onto the manifold, for precision
     a=ip(p,x)
-    a=torch.clamp(a,max=-1) # ensures -a is at least 1
+    a=torch.clamp(a,max=-1.0 - 1e-7) # ensures -a is at least slightly > 1 for safe acosh derivative
     theta=torch.acosh(-a)
     v=p+torch.unsqueeze(ip(x,p),1)*x
     t=torch.unsqueeze(mag(v),1)
-    unitv=v/t
+    safe_t = torch.where(t == 0, torch.ones_like(t), t)
+    unitv=v/safe_t
     out=torch.unsqueeze(theta,1)*unitv
     return out
 
@@ -85,11 +87,12 @@ def newlog(y, z):
     y=y/torch.unsqueeze(torch.sqrt(-ip(y,y)),dim=1) # reprojects y onto the manifold, for precision
     z=z/torch.unsqueeze(torch.sqrt(-ip(z,z)),dim=1) # reprojects z onto the manifold, for precision
     a=ip(y,z)
-    a=torch.clamp(a,max=-1) # ensures -a is at least 1
+    a=torch.clamp(a,max=-1.0 - 1e-7) # ensures -a is at least slightly > 1 for safe acosh derivative
     theta=torch.acosh(-a)
     v=z+torch.unsqueeze(ip(y,z),1)*y
     t=torch.unsqueeze(mag(v),1)
-    unitv=v/t
+    safe_t = torch.where(t == 0, torch.ones_like(t), t)
+    unitv=v/safe_t
     out=torch.unsqueeze(theta,1)*unitv
     return out
 
@@ -148,28 +151,33 @@ def quantile(x, beta, y, xiy, tol=1e-100):
     xiy: unit vector in T_yH^n corresponding to xi (1,n)
     out: (beta, xi)th-quantile (1,n+1)
     """
-    x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),1) # reprojects x onto the manifold, for precision
-    xiy=xiy/torch.sqrt(torch.sum(xiy*xiy)) # ensures xiy is unit vector
-    current_p=torch.unsqueeze(torch.concat((torch.ones(1),torch.zeros(x.shape[1]-1))),0) # initial estimate for quantile
-    current_loss=loss(current_p,x,beta,y,xiy)
-    lr=0.001
-    step=-grad(current_p,x,beta,y,xiy)
-    step/=mag(step)
-    count=0
-    while lr>tol and count<1000:
-        new_p=exp(current_p,lr*step).float()
-        new_loss=loss(new_p,x,beta,y,xiy)
-        if (new_loss<=current_loss):
-            current_p=new_p
-            current_loss=new_loss
-            step=-grad(current_p,x,beta,y,xiy)
-            step/=mag(step)
-            lr=1.1*lr # try to speed up convergence by increasing learning rate
-        else:
-            lr=lr/2
-            count+=1
-    out=current_p
-    return out
+    with torch.no_grad(): # Prevents memory leaks during optimization iteration
+        x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),1) # reprojects x onto the manifold, for precision
+        xiy=xiy/torch.sqrt(torch.sum(xiy*xiy)) # ensures xiy is unit vector
+        #current_p=torch.unsqueeze(x[0,:],0) # initial estimate for quantile
+        current_p=torch.unsqueeze(torch.concat((torch.ones(1),torch.zeros(x.shape[1]-1))),0) # initial estimate for quantile
+        old_p=current_p.detach().clone()
+        current_loss=loss(current_p,x,beta,y,xiy)
+        lr=0.001
+        step=-grad(current_p,x,beta,y,xiy)
+        step/=mag(step)
+        count=0
+        while lr>tol and count<1000:
+            new_p=exp(current_p,lr*step).float()
+            new_loss=loss(new_p,x,beta,y,xiy)
+            #print(new_loss)
+            if (new_loss<=current_loss):
+                old_p=current_p
+                current_p=new_p
+                current_loss=new_loss
+                step=-grad(current_p,x,beta,y,xiy)
+                step/=mag(step)
+                lr=1.1*lr # try to speed up convergence by increasing learning rate
+            else:
+                lr=lr/2
+                count+=1
+        out=current_p
+        return out
 
 def H2B(p):
     """
@@ -215,29 +223,30 @@ def frechetmean(x, tol=1e-100):
     x: batch of points in H^n (b,n+1)
     out: frechet mean (1,n+1)
     """
-    x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),1) # reprojects x onto the manifold, for precision
-    current_p=torch.unsqueeze(torch.concat((torch.ones(1),torch.zeros(x.shape[1]-1))),0) # initial estimate for quantile
-    old_p=current_p.detach().clone()
-    current_loss=meanloss(current_p,x)
-    lr=0.001
-    step=-meangrad(current_p,x)
-    step/=mag(step)
-    count=0
-    while lr>tol and count<1000:
-        new_p=exp(current_p,lr*step).float()
-        new_loss=meanloss(new_p,x)
-        if (new_loss<=current_loss):
-            old_p=current_p
-            current_p=new_p
-            current_loss=new_loss
-            step=-meangrad(current_p,x)
-            step/=mag(step)
-            lr=1.1*lr # try to speed up convergence by increasing learning rate
-        else:
-            lr=lr/2
-            count+=1
-    out=current_p
-    return out
+    with torch.no_grad(): # Prevents memory leaks during optimization iteration
+        x=x/torch.unsqueeze(torch.sqrt(-ip(x,x)),1) # reprojects x onto the manifold, for precision
+        current_p=torch.unsqueeze(torch.concat((torch.ones(1),torch.zeros(x.shape[1]-1))),0) # initial estimate for quantile
+        old_p=current_p.detach().clone()
+        current_loss=meanloss(current_p,x)
+        lr=0.001
+        step=-meangrad(current_p,x)
+        step/=mag(step)
+        count=0
+        while lr>tol and count<1000:
+            new_p=exp(current_p,lr*step).float()
+            new_loss=meanloss(new_p,x)
+            if (new_loss<=current_loss):
+                old_p=current_p
+                current_p=new_p
+                current_loss=new_loss
+                step=-meangrad(current_p,x)
+                step/=mag(step)
+                lr=1.1*lr # try to speed up convergence by increasing learning rate
+            else:
+                lr=lr/2
+                count+=1
+        out=current_p
+        return out
 
 def pt(x, v, p):
     """
@@ -257,8 +266,7 @@ def vorth(v,orth):
     basis: an orthonormal basis in the same tangent space (n,n+1)
     out: v in terms of the basis (b,n)
     """
-    copy=v.detach().clone()
-    copy[:,0]=-copy[:,0]
+    copy = torch.cat([-v[:, :1], v[:, 1:]], dim=1)
     out=torch.matmul(copy,torch.transpose(orth,0,1))
     return out
 
