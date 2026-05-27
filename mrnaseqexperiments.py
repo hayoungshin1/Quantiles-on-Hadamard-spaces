@@ -7,8 +7,10 @@ angles=2*torch.arange(0,m)*math.pi/m
 originradial[:,1]=torch.cos(angles)
 originradial[:,2]=torch.sin(angles)
 
-robust='No' # robust='Yes'
-outliers='No' # outliers='Yes'
+robust='No'
+#robust='Yes'
+outliers='No'
+#outliers='Yes'
 
 data=np.load('Downloads/olsson_poincare_embedding.npz')
 xdata=np.concatenate((data['x_train'],data['x_test']),axis=0)
