@@ -9,8 +9,8 @@ originradial[:,2]=torch.sin(angles)
 
 robust='No'
 #robust='Yes'
-outliers='No'
-#outliers='Yes'
+#outliers='No'
+outliers='Yes'
 
 data=np.load('Downloads/olsson_poincare_embedding.npz')
 xdata=np.concatenate((data['x_train'],data['x_test']),axis=0)
